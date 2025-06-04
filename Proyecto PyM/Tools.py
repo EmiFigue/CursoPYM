@@ -1,3 +1,7 @@
+import random as r
+import pandas as pd
+import sqlite3 as sql
+import time as t
 class tools:
   #Valores constantes que se utilizaran en el programa
   abcdario = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
@@ -9,68 +13,69 @@ class tools:
             'Laptops', 'Tablets', 'Mochilas', 'Bolsas', 'Cajas', 'Pegamento', 'Tijeras',
             'Monitores', 'Teclados', 'Mouse', 'Audífonos', 'Cables', 'Cargadores', 'Baterías',
             'Pc', 'Uniformes', 'Pinturas', 'Pinceles', 'Papel', 'Cartulinas']
+  ventas_por_fecha = r.randint(1, 1000)
+  
 
   def _generar_info(fecha_reporte):
-    """
+        """
+        Genera un DataFrame de ventas simuladas para una fecha específica.
+        El número de ventas generadas varía aleatoriamente entre 1 y 1000.
 
-    Args:
-        fecha_reporte (fecha): Fecha del reporte que se va a generar
+        Args:
+            fecha_reporte (str): Fecha del reporte que se va a generar (formato YYYY-MM-DD).
 
-    Returns:
-        dataframe: dataframe con la información de las ventas simuladas
-    """
+        Returns:
+            pd.DataFrame: DataFrame con la información de las ventas simuladas.
+        """
+        fechas = []
+        sucursales = []
+        productos = []
+        claves_producto = []
+        precios = []
+        cantidades_vendidas = []
+        totales_ticket = []
+        for _ in range(tools.ventas_por_fecha):
+            sucursal = r.choice(tools.papelerias)
+            producto = r.choice(tools.lineas)
+            clave_producto = (
+                r.choice(tools.abcdario) +
+                r.choice(tools.abcdario) +
+                r.choice(tools.abcdario) + "-" +
+                ''.join(str(r.randint(1, 9)) for _ in range(3))
+            )
+            precio = round(r.uniform(1, 10000), 2)
+            cantidad_vendida = r.randint(1, 1000)
+            total_ticket = round(precio * cantidad_vendida, 2)
 
-    import random as r
-    import pandas as pd
+            fechas.append(fecha_reporte)
+            sucursales.append(sucursal)
+            productos.append(producto)
+            claves_producto.append(clave_producto)
+            precios.append(precio)
+            cantidades_vendidas.append(cantidad_vendida)
+            totales_ticket.append(total_ticket)
 
-    fechas = []
-    sucursales = []
-    productos = []
-    claves_producto = []
-    precios = []
-    cantidades_vendidas = []
-    totales_ticket = []
+        diccionario_ventas_df = {
+            "Fecha": fechas,
+            "Sucursal": sucursales,
+            "Producto": productos,
+            "Clave_Producto": claves_producto,
+            "Precio": precios,
+            "Cantidad_Vendida": cantidades_vendidas,
+            "Total_Ticket": totales_ticket
+        }
 
-    for i in range(1, 1001):
-      sucursal = r.choice(tools.papelerias)
-      producto = r.choice(tools.lineas)
-      clave_producto = r.choice(tools.abcdario) + r.choice(tools.abcdario) + r.choice(tools.abcdario) + "-" + str(r.randint(1,9)) + str(r.randint(1,9)) + str(r.randint(1,9))
-      precio = round(r.random() * r.randint(100,10000), 2)
-      cantidad_vendida = r.randint(1, 1000)
-      total_ticket = precio * cantidad_vendida
+        df_ventas = pd.DataFrame(diccionario_ventas_df)
+        print(f"Generación exitosa al {fecha_reporte} con {tools.ventas_por_fecha} ventas")
+        return df_ventas
 
-      fechas.append(fecha_reporte)
-      sucursales.append(sucursal)
-      productos.append(producto)
-      claves_producto.append(clave_producto)
-      precios.append(precio)
-      cantidades_vendidas.append(cantidad_vendida)
-      totales_ticket.append(total_ticket)
-
-    diccionario_ventas_df = {
-        "Fecha": fechas,
-        "Sucursal": sucursales,
-        "Producto": productos,
-        "Clave_Producto": claves_producto,
-        "Precio": precios,
-        "Cantidad_Vendida": cantidades_vendidas,
-        "Total_Ticket": totales_ticket
-    }
-
-    df_ventas = pd.DataFrame(diccionario_ventas_df)
-
-    print(f"Generación exitosa al {fecha_reporte}")
-    return df_ventas
-
-  def definiciones():
-    """Método para definir la base de datos y la tabla de ventas"""
-    import sqlite3 as sql
+  def inicializar_bdd():
 
     conn = sql.connect("Ventas.db")
     cursor = conn.cursor()
 
     query_create = """
-      CREATE TABLE VENTAS_2025(
+      CREATE TABLE Ventas(
         Fecha            TEXT,
         Sucursal         TEXT,
         Producto         TEXT,
@@ -88,19 +93,14 @@ class tools:
     print("Tabla creada")
 
   def _inserciones_mult(df):
-      """"""
-
-      import random as r
-      import pandas as pd
-      import sqlite3 as sql
-
+      
       conn = sql.connect("Ventas.db")
       cursor = conn.cursor()
 
-      for i in range(0, 1000):
+      for i in range(tools.ventas_por_fecha):
           query_insert = f"""
           INSERT INTO
-            VENTAS_2025
+            Ventas
           VALUES(
             '{df.loc[i, "Fecha"]}',
             '{df.loc[i, "Sucursal"]}',
@@ -117,12 +117,9 @@ class tools:
       conn.close()
       print(f"Inserción existosa")
 
-  ######################## Metodo proceso final ################################
 
   def rangos(f_init, f_fin):
-    """ Métod público para generar un rango de fechas consecutivo
-    comprendido entre f_init y f_fin
-    """
+    
     import pandas as pd
     
     # 1. Generamos el rango de fechas con la funcion date_range(f_init, f_fin)
@@ -141,13 +138,10 @@ class tools:
 
     return rango_f
   # None ----> Vacio/Nada
-  def proceso(fecha_ini, fecha_fin=None):
+  def generar_bdd_rango(fecha_ini, fecha_fin=None):
       """Metodo en el cual simulamos la informacion de las ventas y adicionalmente realizamos
       las inserciones. Se podra generar informacion de un solo dia o informacion de
       todo un rango de fechas."""
-
-      import pandas as pd
-      import time as t
 
       # Pantallazo inicial del tiempo
       inicio = t.time()
@@ -184,18 +178,35 @@ class tools:
           print("Comienzo de las inserciones ....")
           tools._inserciones_mult(df)
 
-  ######################## Metodo proceso final ################################
+  def consultar(query):
+        """
+        Realiza una consulta SQL sobre la base de datos 'ventas.db' y devuelve el resultado como DataFrame.
 
-  def query(sentencia):
-      """Método para realizar consultas SQL en nuestra tabla de ventas"""
-      import sqlite3 as sql
-      import pandas as pd
+        Parámetros:
+        -----------
+        query : str
+            Consulta SQL a ejecutar sobre la base de datos.
 
-      conn = sql.connect("Ventas.db")
-      df = pd.read_sql_query(sentencia, conn)
-      conn.close()
+        Retorna:
+        --------
+        consulta : pandas.DataFrame
+            DataFrame con el resultado de la consulta.
 
-      return df
+        Ejemplo de uso:
+        ---------------
+        resultado = consultar_bbdd("SELECT * FROM ventas")
+        """
+        import sqlite3 as sql
+        import pandas as pd
+
+        # Creamos la conexion o la base de datos
+        conn = sql.connect('Ventas.db')
+        # Hacemos una consulta a la tabla ventas
+        consulta = pd.read_sql_query(query, conn)
+        # Cerramos la conexion
+        conn.close()
+
+        return consulta
 
   def comprobar_fechas():
       """Método para ver cuales fechas tenemos cargadas en la tabla
@@ -209,7 +220,7 @@ class tools:
       SELECT
         DISTINCT FECHA
       FROM
-        VENTAS_2025
+        Ventas
       """
 
       df = pd.read_sql_query(query, conn)
